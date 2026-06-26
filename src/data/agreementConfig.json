@@ -1,0 +1,37 @@
+{
+  "property": {
+    "name": "M. Petty Rose",
+    "baseAddress": "M. Petty Rose, Handhuvarihigun, Kaafu Male, Maldives"
+  },
+  "landlord": {
+    "name": "Shadhiya Thaufeeg",
+    "idCardNo": "A081464",
+    "paymentAccount": "Bank of Maldives account no. 7770000013844, account holder Shadhiya Thaufeeg",
+    "signaturePath": "/signatures/shadhiya.png"
+  },
+  "witnesses": {
+    "landlord": {
+      "name": "Ahmed Shafeeg",
+      "idCardNo": "A027811",
+      "signaturePath": "/signatures/shafeeg.png"
+    },
+    "tenant": {
+      "label": "Witness for Tenant"
+    }
+  },
+  "apartments": [
+    { "apartmentNumber": "2A", "floor": 2, "unit": "A", "monthlyRent": 10000 },
+    { "apartmentNumber": "2B", "floor": 2, "unit": "B", "monthlyRent": 16000 },
+    { "apartmentNumber": "3A", "floor": 3, "unit": "A", "monthlyRent": 10000 },
+    { "apartmentNumber": "3B", "floor": 3, "unit": "B", "monthlyRent": 16000 }
+  ],
+  "fixedFees": {
+    "latePaymentDailyFee": 300
+  },
+  "constants": {
+    "rentDueDay": 10,
+    "unpaidTerminationDays": 15,
+    "securityDepositReturnDays": 10,
+    "noticePeriodMonths": 1
+  }
+}

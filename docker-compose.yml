@@ -1,0 +1,10 @@
+services:
+  pettyrose:
+    build:
+      context: .
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/}
+    container_name: pettyrose
+    restart: unless-stopped
+    ports:
+      - "3005:80"
