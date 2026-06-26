@@ -14,6 +14,14 @@ const page = {
   marginBottom: 54,
 };
 
+const printColor = {
+  border: 184,
+  headingFill: 238,
+  heroFill: 250,
+  rowFill: 252,
+  text: 28,
+};
+
 const terms = [
   {
     title: "Property and Use",
@@ -214,13 +222,14 @@ const detailRow = (
   value: string,
   rowHeight = 24,
 ) => {
-  doc.setFillColor(0, 0, 0);
-  doc.rect(x, y, labelWidth, rowHeight, "F");
+  doc.setDrawColor(printColor.border);
+  doc.setFillColor(printColor.headingFill, printColor.headingFill, printColor.headingFill);
+  doc.rect(x, y, labelWidth, rowHeight, "FD");
   setText(doc, 8.6, "bold");
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(printColor.text, printColor.text, printColor.text);
   doc.text(label, x + 7, y + 15);
-  doc.setFillColor(244, 244, 244);
-  doc.rect(x + labelWidth, y, valueWidth, rowHeight, "F");
+  doc.setFillColor(printColor.rowFill, printColor.rowFill, printColor.rowFill);
+  doc.rect(x + labelWidth, y, valueWidth, rowHeight, "FD");
   setText(doc, 9.2);
   const lines = doc.splitTextToSize(value, valueWidth - 12);
   doc.text(lines, x + labelWidth + 7, y + 15);
@@ -229,9 +238,14 @@ const detailRow = (
 const drawCover = (doc: jsPDF, data: AgreementFormData, premises: string) => {
   const heroX = page.marginX;
   const heroY = 68;
-  doc.setFillColor(0, 0, 0);
-  doc.rect(heroX, heroY, page.width - page.marginX * 2, 205, "F");
-  doc.setTextColor(255, 255, 255);
+  doc.setDrawColor(printColor.border);
+  doc.setFillColor(printColor.heroFill, printColor.heroFill, printColor.heroFill);
+  doc.rect(heroX, heroY, page.width - page.marginX * 2, 205, "FD");
+  doc.setDrawColor(40, 40, 40);
+  doc.setLineWidth(1.2);
+  doc.line(heroX + 34, heroY + 42, page.width - page.marginX - 34, heroY + 42);
+  doc.line(heroX + 34, heroY + 176, page.width - page.marginX - 34, heroY + 176);
+  doc.setTextColor(printColor.text, printColor.text, printColor.text);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(25);
   doc.text("RESIDENTIAL", page.width / 2, heroY + 78, { align: "center" });
@@ -299,13 +313,14 @@ const signatureCell = (
   const signatureDividerY = y + 166;
   const detailStartY = y + 186;
 
-  doc.setFillColor(0, 0, 0);
-  doc.rect(x, y, width, 38, "F");
-  doc.setTextColor(255, 255, 255);
+  doc.setDrawColor(printColor.border);
+  doc.setFillColor(printColor.headingFill, printColor.headingFill, printColor.headingFill);
+  doc.rect(x, y, width, 38, "FD");
+  doc.setTextColor(printColor.text, printColor.text, printColor.text);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.text(role.toUpperCase(), x + width / 2, y + 23, { align: "center" });
-  doc.setDrawColor(180);
+  doc.setDrawColor(printColor.border);
   doc.rect(x, y, width, cellHeight);
   doc.line(x, y + 38, x + width, y + 38);
   doc.line(x, signatureDividerY, x + width, signatureDividerY);
