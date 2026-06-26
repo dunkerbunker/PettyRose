@@ -1,5 +1,6 @@
 import { Building2, Check, ChevronDown, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { PointerEvent, TouchEvent } from "react";
 import type { AgreementConfig, ApartmentNumber } from "../types/agreement";
 import { apartmentLabel, formatMoney, getApartment } from "../utils/format";
 
@@ -11,7 +12,28 @@ type ApartmentPickerProps = {
 
 export function ApartmentPicker({ config, value, onChange }: ApartmentPickerProps) {
   const [open, setOpen] = useState(false);
+  const touchHandledAt = useRef(0);
   const selectedApartment = getApartment(config, value);
+
+  const selectApartment = (apartmentNumber: ApartmentNumber) => {
+    onChange(apartmentNumber);
+    setOpen(false);
+  };
+
+  const handleTouchSelection = (
+    event: PointerEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>,
+    apartmentNumber: ApartmentNumber,
+  ) => {
+    event.preventDefault();
+    if (Date.now() - touchHandledAt.current < 120) return;
+    touchHandledAt.current = Date.now();
+    selectApartment(apartmentNumber);
+  };
+
+  const handleClickSelection = (apartmentNumber: ApartmentNumber) => {
+    if (Date.now() - touchHandledAt.current < 450) return;
+    selectApartment(apartmentNumber);
+  };
 
   return (
     <>
@@ -47,10 +69,13 @@ export function ApartmentPicker({ config, value, onChange }: ApartmentPickerProp
                     className={`apartment-option ${isSelected ? "apartment-option--active" : ""}`}
                     key={apartment.apartmentNumber}
                     type="button"
-                    onClick={() => {
-                      onChange(apartment.apartmentNumber);
-                      setOpen(false);
+                    onPointerUp={(event) => {
+                      if (event.pointerType === "touch" || event.pointerType === "pen") {
+                        handleTouchSelection(event, apartment.apartmentNumber);
+                      }
                     }}
+                    onTouchEnd={(event) => handleTouchSelection(event, apartment.apartmentNumber)}
+                    onClick={() => handleClickSelection(apartment.apartmentNumber)}
                   >
                     <span className="apartment-option__unit">{apartment.apartmentNumber}</span>
                     <span className="apartment-option__meta">

@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent, TouchEvent } from "react";
 import { formatDisplayDate, getMonthMatrix, monthNames, toDateInputValue } from "../utils/date";
 
 type DatePickerDrawerProps = {
@@ -14,6 +15,7 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
   const selected = useMemo(() => new Date(`${value}T12:00:00`), [value]);
   const [viewMonth, setViewMonth] = useState(selected.getMonth());
   const [viewYear, setViewYear] = useState(selected.getFullYear());
+  const touchHandledAt = useRef(0);
 
   useEffect(() => {
     if (open) {
@@ -29,6 +31,27 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
     const next = new Date(viewYear, viewMonth + delta, 1);
     setViewMonth(next.getMonth());
     setViewYear(next.getFullYear());
+  };
+
+  const selectDate = (dateValue: string) => {
+    if (!dateValue) return;
+    onChange(dateValue);
+    onClose();
+  };
+
+  const handleTouchDate = (
+    event: PointerEvent<HTMLButtonElement> | TouchEvent<HTMLButtonElement>,
+    dateValue: string,
+  ) => {
+    event.preventDefault();
+    if (Date.now() - touchHandledAt.current < 120) return;
+    touchHandledAt.current = Date.now();
+    selectDate(dateValue);
+  };
+
+  const handleClickDate = (dateValue: string) => {
+    if (Date.now() - touchHandledAt.current < 450) return;
+    selectDate(dateValue);
   };
 
   if (!open) return null;
@@ -85,10 +108,13 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
                 disabled={!date}
                 key={date ? dateValue : `empty-${index}`}
                 type="button"
-                onClick={() => {
-                  onChange(dateValue);
-                  onClose();
+                onPointerUp={(event) => {
+                  if (dateValue && (event.pointerType === "touch" || event.pointerType === "pen")) {
+                    handleTouchDate(event, dateValue);
+                  }
                 }}
+                onTouchEnd={(event) => dateValue && handleTouchDate(event, dateValue)}
+                onClick={() => handleClickDate(dateValue)}
               >
                 {date?.getDate() ?? ""}
               </button>
@@ -99,10 +125,7 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
         <div className="sheet-shortcuts">
           <button
             type="button"
-            onClick={() => {
-              onChange(toDateInputValue(new Date()));
-              onClose();
-            }}
+            onClick={() => selectDate(toDateInputValue(new Date()))}
           >
             Today
           </button>
@@ -110,7 +133,7 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
             aria-label={`${label} native date`}
             type="date"
             value={value}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={(event) => selectDate(event.target.value)}
           />
         </div>
       </section>
