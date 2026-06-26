@@ -1,0 +1,58 @@
+### Node / package
+node_modules/
+
+### Build outputs
+dist/
+build/
+out/
+public/build/
+
+### Vite / tooling caches
+.vite/
+.cache/
+/.turbo/
+
+### TypeScript
+*.tsbuildinfo
+
+### Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+
+### Environment
+.env
+.env.*.local
+.env.local
+.env.production.local
+.env.development.local
+
+### OS files
+.DS_Store
+Thumbs.db
+
+### Editors / IDEs
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+### Temporary files
+/tmp/
+tmp/
+tmp/**
+tmp/pdfs/
+
+### Generated artifacts
+coverage/
+.nyc_output/
+*.tgz
+
+### Docker
+docker-compose.override.yml
+.env.docker
+
+### Misc
+.cache/
+.vscode-test/
