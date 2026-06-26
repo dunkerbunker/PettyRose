@@ -69,10 +69,12 @@ function validate(form: AgreementFormData): Errors {
 }
 
 function App() {
+  const [isAppReady, setIsAppReady] = useState(false);
   const [form, setForm] = useState<AgreementFormData>(createInitialForm);
   const [errors, setErrors] = useState<Errors>({});
   const [agreement, setAgreement] = useState<GeneratedAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState("");
   const [previewZoom, setPreviewZoom] = useState(1);
 
   const selectedApartment = useMemo(
@@ -90,6 +92,22 @@ function App() {
       if (agreement?.url) URL.revokeObjectURL(agreement.url);
     };
   }, [agreement]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fontReady = "fonts" in document ? document.fonts.ready.catch(() => undefined) : Promise.resolve();
+    const minimumDisplay = new Promise((resolve) => {
+      window.setTimeout(resolve, 520);
+    });
+
+    Promise.all([fontReady, minimumDisplay]).then(() => {
+      if (!cancelled) setIsAppReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updateForm = <K extends keyof AgreementFormData>(key: K, value: AgreementFormData[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -129,11 +147,14 @@ function App() {
     if (Object.keys(nextErrors).length) return;
 
     setIsGenerating(true);
+    setGenerationError("");
     try {
       if (agreement?.url) URL.revokeObjectURL(agreement.url);
       const generated = await generateAgreementPdf(form);
       setAgreement(generated);
       setPreviewZoom(1);
+    } catch {
+      setGenerationError("PDF could not be prepared. Check the tenant details and try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -295,11 +316,34 @@ function App() {
         </section>
       </main>
 
-      <BottomActionBar mode="edit" disabled={isGenerating} onPrimary={handleGenerate} />
+      {generationError && (
+        <div className="toast-message" role="status" aria-live="polite">
+          {generationError}
+        </div>
+      )}
+      <BottomActionBar mode="edit" disabled={isGenerating} busy={isGenerating} onPrimary={handleGenerate} />
       {isGenerating && (
-        <div className="loading-shade" aria-live="polite">
-          <Loader2 size={22} />
-          <span>Generating PDF</span>
+        <div className="loading-shade loading-shade--pdf" aria-live="polite" aria-busy="true">
+          <div className="loading-card">
+            <Loader2 className="motion-spin" size={23} />
+            <strong>Building agreement</strong>
+            <span>Preparing signatures, pages, and preview</span>
+            <div className="loader-track" aria-hidden="true">
+              <i />
+            </div>
+          </div>
+        </div>
+      )}
+      {!isAppReady && (
+        <div className="loading-shade loading-shade--app" aria-live="polite" aria-busy="true">
+          <div className="loading-card">
+            <div className="loading-card__mark">PR</div>
+            <strong>Loading agreement tool</strong>
+            <span>Setting up the form</span>
+            <div className="loader-track" aria-hidden="true">
+              <i />
+            </div>
+          </div>
         </div>
       )}
       {agreement && (
