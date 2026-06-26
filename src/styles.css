@@ -862,6 +862,57 @@ button {
   max-width: 410px;
 }
 
+.preview-fallback {
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.07));
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 22px;
+  display: grid;
+  gap: 10px;
+  margin: 10px auto 16px;
+  max-width: 410px;
+  padding: 14px;
+}
+
+.preview-fallback div {
+  display: grid;
+  gap: 3px;
+}
+
+.preview-fallback strong {
+  color: white;
+  font-size: 15px;
+}
+
+.preview-fallback div span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  font-weight: 740;
+  line-height: 1.35;
+}
+
+.preview-fallback a {
+  align-items: center;
+  background: white;
+  border-radius: 999px;
+  color: var(--ink);
+  display: flex;
+  font-size: 13px;
+  font-weight: 850;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+  text-decoration: none;
+  transition:
+    opacity 150ms ease,
+    transform 150ms var(--ease-out);
+}
+
+.preview-fallback a:active {
+  transform: scale(0.97);
+}
+
 .preview-loader__copy {
   align-items: center;
   background: rgba(255, 255, 255, 0.09);
