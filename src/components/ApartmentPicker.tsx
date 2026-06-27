@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import type { PointerEvent, TouchEvent } from "react";
 import type { AgreementConfig, ApartmentNumber } from "../types/agreement";
 import { apartmentLabel, formatMoney, getApartment } from "../utils/format";
+import { isDrawerOpenSuppressed, suppressDrawerOpen } from "../utils/mobileInteraction";
 
 type ApartmentPickerProps = {
   config: AgreementConfig;
@@ -15,7 +16,18 @@ export function ApartmentPicker({ config, value, onChange }: ApartmentPickerProp
   const touchHandledAt = useRef(0);
   const selectedApartment = getApartment(config, value);
 
+  const openPicker = () => {
+    if (isDrawerOpenSuppressed()) return;
+    setOpen(true);
+  };
+
+  const closePicker = () => {
+    suppressDrawerOpen();
+    setOpen(false);
+  };
+
   const selectApartment = (apartmentNumber: ApartmentNumber) => {
+    suppressDrawerOpen();
     onChange(apartmentNumber);
     setOpen(false);
   };
@@ -37,7 +49,7 @@ export function ApartmentPicker({ config, value, onChange }: ApartmentPickerProp
 
   return (
     <>
-      <button className="apartment-trigger" type="button" onClick={() => setOpen(true)}>
+      <button className="apartment-trigger" type="button" onClick={openPicker}>
         <Building2 size={19} />
         <span>
           <strong>{value}</strong>
@@ -48,7 +60,7 @@ export function ApartmentPicker({ config, value, onChange }: ApartmentPickerProp
 
       {open && (
         <div className="sheet-shell" role="dialog" aria-modal="true" aria-label="Choose apartment">
-          <button className="sheet-backdrop" type="button" aria-label="Close apartment picker" onClick={() => setOpen(false)} />
+          <button className="sheet-backdrop" type="button" aria-label="Close apartment picker" onClick={closePicker} />
           <section className="bottom-sheet apartment-sheet">
             <div className="sheet-grabber" />
             <header className="sheet-header">
@@ -56,7 +68,7 @@ export function ApartmentPicker({ config, value, onChange }: ApartmentPickerProp
                 <p>Apartment</p>
                 <strong>Choose premises</strong>
               </div>
-              <button className="icon-button" type="button" aria-label="Close apartment picker" onClick={() => setOpen(false)}>
+              <button className="icon-button" type="button" aria-label="Close apartment picker" onClick={closePicker}>
                 <X size={20} />
               </button>
             </header>

@@ -1,6 +1,7 @@
 import { CalendarDays } from "lucide-react";
 import { useState } from "react";
 import { formatDisplayDate } from "../utils/date";
+import { isDrawerOpenSuppressed } from "../utils/mobileInteraction";
 import { DatePickerDrawer } from "./DatePickerDrawer";
 
 type DateFieldProps = {
@@ -13,9 +14,14 @@ type DateFieldProps = {
 export function DateField({ label, value, error, onChange }: DateFieldProps) {
   const [open, setOpen] = useState(false);
 
+  const openDrawer = () => {
+    if (isDrawerOpenSuppressed()) return;
+    setOpen(true);
+  };
+
   return (
     <>
-      <button className={`date-field ${error ? "date-field--error" : ""}`} type="button" onClick={() => setOpen(true)}>
+      <button className={`date-field ${error ? "date-field--error" : ""}`} type="button" onClick={openDrawer}>
         <span>
           <small>{label}</small>
           <strong>{formatDisplayDate(value)}</strong>

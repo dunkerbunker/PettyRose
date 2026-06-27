@@ -1,7 +1,7 @@
 import { Download, ExternalLink, Loader2, Minus, Plus, Share2, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import type { GeneratedAgreement } from "../types/agreement";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -17,11 +17,9 @@ type PreviewModalProps = {
 
 type DeviceProfile = {
   documentTimeoutMs: number;
-  exportTimeoutMs: number;
   maxPixels: number;
   renderTimeoutMs: number;
   scale: number;
-  showExternalViewer: boolean;
 };
 
 const nextFrame = () =>
@@ -59,21 +57,17 @@ const getDeviceProfile = (): DeviceProfile => {
   if (needsConservativeCanvas) {
     return {
       documentTimeoutMs: 6500,
-      exportTimeoutMs: 3500,
-      maxPixels: 900_000,
+      maxPixels: 1_050_000,
       renderTimeoutMs: 4500,
-      scale: 0.92,
-      showExternalViewer: true,
+      scale: 1,
     };
   }
 
   return {
     documentTimeoutMs: 10000,
-    exportTimeoutMs: 5000,
     maxPixels: isCompactViewport ? 1_700_000 : 3_000_000,
     renderTimeoutMs: 8000,
     scale: isCompactViewport ? 1.25 : 1.55,
-    showExternalViewer: false,
   };
 };
 
@@ -83,36 +77,100 @@ const getSafeViewport = (page: pdfjsLib.PDFPageProxy, profile: DeviceProfile) =>
   return page.getViewport({ scale: Math.min(profile.scale, maxScaleForPixels) });
 };
 
+type PdfPageCanvasProps = {
+  active: boolean;
+  pageNumber: number;
+  pdf: pdfjsLib.PDFDocumentProxy;
+  profile: DeviceProfile;
+  onError: (message: string) => void;
+  onRendered: (pageNumber: number) => void;
+};
+
+function PdfPageCanvas({ active, pageNumber, pdf, profile, onError, onRendered }: PdfPageCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [rendered, setRendered] = useState(false);
+
+  useEffect(() => {
+    if (!active || rendered) return undefined;
+
+    let cancelled = false;
+    let renderTask: pdfjsLib.RenderTask | null = null;
+
+    const renderPage = async () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      try {
+        const page = await withTimeout(pdf.getPage(pageNumber), profile.renderTimeoutMs);
+        if (cancelled) return;
+
+        const viewport = getSafeViewport(page, profile);
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) throw new Error("Canvas is unavailable.");
+
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        renderTask = page.render({ canvasContext: context, viewport });
+        await withTimeout(renderTask.promise, profile.renderTimeoutMs, () => {
+          renderTask?.cancel();
+        });
+
+        if (!cancelled) {
+          setRendered(true);
+          onRendered(pageNumber);
+        }
+      } catch {
+        if (!cancelled) onError("This browser could not render the PDF preview. Use the PDF actions below as a fallback.");
+      }
+    };
+
+    renderPage();
+
+    return () => {
+      cancelled = true;
+      renderTask?.cancel();
+    };
+  }, [active, onError, onRendered, pageNumber, pdf, profile, rendered]);
+
+  return <canvas className={`pdf-page-canvas ${rendered ? "pdf-page-canvas--ready" : ""}`} ref={canvasRef} />;
+}
+
 export function PreviewModal({ agreement, zoom, fallback, onZoom, onClose, onShare }: PreviewModalProps) {
-  const [pages, setPages] = useState<string[]>([]);
+  const profile = useMemo(getDeviceProfile, []);
+  const [pdf, setPdf] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [numPages, setNumPages] = useState(0);
+  const [activeRenderPage, setActiveRenderPage] = useState(1);
+  const [renderedPages, setRenderedPages] = useState<Set<number>>(() => new Set());
   const [renderProgress, setRenderProgress] = useState({ current: 0, total: 0 });
   const [renderError, setRenderError] = useState<string>("");
-  const [renderComplete, setRenderComplete] = useState(false);
   const [showExternalViewer, setShowExternalViewer] = useState(false);
-  const isRendering = !renderError && !renderComplete;
+  const isRendering = !renderError && (!pdf || renderedPages.size < numPages);
+
+  const handlePageRendered = useCallback(
+    (pageNumber: number) => {
+      setRenderedPages((current) => {
+        const next = new Set(current);
+        next.add(pageNumber);
+        setRenderProgress({ current: next.size, total: numPages });
+        return next;
+      });
+      setActiveRenderPage((current) => Math.max(current, pageNumber + 1));
+    },
+    [numPages],
+  );
+
+  const handleRenderError = useCallback((message: string) => {
+    setRenderError(message);
+    setShowExternalViewer(true);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    const pageUrls: string[] = [];
-    const profile = getDeviceProfile();
-
-    const canvasToObjectUrl = (canvas: HTMLCanvasElement) =>
-      withTimeout(
-        new Promise<string>((resolve, reject) => {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(new Error("Canvas export failed."));
-                return;
-              }
-              resolve(URL.createObjectURL(blob));
-            },
-            "image/jpeg",
-            0.82,
-          );
-        }),
-        profile.exportTimeoutMs,
-      );
+    let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
     const openPdf = async (data: ArrayBuffer) => {
       const documentOptions = {
@@ -132,74 +190,39 @@ export function PreviewModal({ agreement, zoom, fallback, onZoom, onClose, onSha
       }
     };
 
-    const render = async () => {
+    const loadPdf = async () => {
       setRenderError("");
-      setPages([]);
-      setRenderComplete(false);
-      setShowExternalViewer(profile.showExternalViewer);
+      setShowExternalViewer(false);
+      setPdf(null);
+      setNumPages(0);
+      setActiveRenderPage(1);
+      setRenderedPages(new Set());
       setRenderProgress({ current: 0, total: 0 });
-      let loadingTask: pdfjsLib.PDFDocumentLoadingTask | null = null;
 
       try {
         const data = await agreement.blob.arrayBuffer();
         const opened = await openPdf(data);
         loadingTask = opened.task;
-        const pdf = opened.pdf;
-        if (!cancelled) setRenderProgress({ current: 0, total: pdf.numPages });
-
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-          if (cancelled) break;
-          const page = await pdf.getPage(pageNumber);
-          const viewport = getSafeViewport(page, profile);
-          const canvas = document.createElement("canvas");
-          const context = canvas.getContext("2d", { alpha: false });
-          if (!context) throw new Error("Canvas is unavailable.");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          context.fillStyle = "#ffffff";
-          context.fillRect(0, 0, canvas.width, canvas.height);
-          const renderTask = page.render({ canvasContext: context, viewport });
-          await withTimeout(renderTask.promise, profile.renderTimeoutMs, () => {
-            renderTask.cancel();
-          });
-          const pageUrl = await canvasToObjectUrl(canvas);
-          pageUrls.push(pageUrl);
-          canvas.width = 0;
-          canvas.height = 0;
-
-          if (cancelled) {
-            URL.revokeObjectURL(pageUrl);
-            break;
-          }
-
-          setPages((current) => [...current, pageUrl]);
-          if (!cancelled) setRenderProgress({ current: pageNumber, total: pdf.numPages });
-          await nextFrame();
-        }
-
-        if (!cancelled) setRenderComplete(true);
+        if (cancelled) return;
+        setPdf(opened.pdf);
+        setNumPages(opened.pdf.numPages);
+        setRenderProgress({ current: 0, total: opened.pdf.numPages });
+        await nextFrame();
       } catch {
         if (!cancelled) {
-          setRenderComplete(true);
           setShowExternalViewer(true);
-          setRenderError(
-            pageUrls.length
-              ? "Some pages could not render on this browser. Open the PDF directly to view the full agreement."
-              : "This browser could not render the preview. Open the PDF directly to view the agreement.",
-          );
+          setRenderError("This browser could not open the PDF preview. Use the PDF actions below as a fallback.");
         }
-      } finally {
-        void loadingTask?.destroy();
       }
     };
 
-    render();
+    loadPdf();
 
     return () => {
       cancelled = true;
-      pageUrls.forEach((url) => URL.revokeObjectURL(url));
+      void loadingTask?.destroy();
     };
-  }, [agreement]);
+  }, [agreement, profile]);
 
   return (
     <div className="preview" role="dialog" aria-modal="true" aria-label="PDF preview">
@@ -229,8 +252,8 @@ export function PreviewModal({ agreement, zoom, fallback, onZoom, onClose, onSha
         {showExternalViewer && (
           <div className="preview-fallback">
             <div>
-              <strong>Use phone PDF viewer</strong>
-              <span>Best option for Android Chrome if the in-app preview stays blank.</span>
+              <strong>PDF fallback</strong>
+              <span>Use this only if the in-app Chrome preview stays blank.</span>
             </div>
             <a href={agreement.url} target="_blank" rel="noreferrer">
               <ExternalLink size={18} />
@@ -255,9 +278,23 @@ export function PreviewModal({ agreement, zoom, fallback, onZoom, onClose, onSha
           </div>
         )}
         <div className="pdf-pages" style={{ width: `${Math.max(100, zoom * 100)}%` }}>
-          {pages.map((page, index) => (
-            <img alt={`Agreement page ${index + 1}`} key={page} src={page} />
-          ))}
+          {pdf &&
+            Array.from({ length: numPages }, (_, index) => {
+              const pageNumber = index + 1;
+              return pageNumber <= activeRenderPage ? (
+                <PdfPageCanvas
+                  active={pageNumber === activeRenderPage || renderedPages.has(pageNumber)}
+                  key={pageNumber}
+                  onError={handleRenderError}
+                  onRendered={handlePageRendered}
+                  pageNumber={pageNumber}
+                  pdf={pdf}
+                  profile={profile}
+                />
+              ) : (
+                <div className="page-skeleton page-skeleton--queued" key={pageNumber} />
+              );
+            })}
         </div>
       </main>
       <div className="action-bar action-bar--preview">

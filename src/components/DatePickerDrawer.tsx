@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent, TouchEvent } from "react";
 import { formatDisplayDate, getMonthMatrix, monthNames, toDateInputValue } from "../utils/date";
+import { suppressDrawerOpen } from "../utils/mobileInteraction";
 
 type DatePickerDrawerProps = {
   open: boolean;
@@ -35,7 +36,13 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
 
   const selectDate = (dateValue: string) => {
     if (!dateValue) return;
+    suppressDrawerOpen();
     onChange(dateValue);
+    onClose();
+  };
+
+  const closeDrawer = () => {
+    suppressDrawerOpen();
     onClose();
   };
 
@@ -58,7 +65,7 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
 
   return (
     <div className="sheet-shell" role="dialog" aria-modal="true" aria-label={label}>
-      <button className="sheet-backdrop" type="button" aria-label="Close date picker" onClick={onClose} />
+      <button className="sheet-backdrop" type="button" aria-label="Close date picker" onClick={closeDrawer} />
       <section className="bottom-sheet">
         <div className="sheet-grabber" />
         <header className="sheet-header">
@@ -66,7 +73,7 @@ export function DatePickerDrawer({ open, label, value, onClose, onChange }: Date
             <p>{label}</p>
             <strong>{formatDisplayDate(value)}</strong>
           </div>
-          <button className="icon-button" type="button" aria-label="Close" onClick={onClose}>
+          <button className="icon-button" type="button" aria-label="Close" onClick={closeDrawer}>
             <X size={20} />
           </button>
         </header>

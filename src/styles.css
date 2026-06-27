@@ -1005,14 +1005,25 @@ button {
   transform-origin: top center;
 }
 
-.pdf-pages img {
+.pdf-page-canvas {
   background: white;
   border: 0;
   border-radius: 14px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
   display: block;
   height: auto;
+  opacity: 0;
+  transition: opacity 180ms var(--ease-out);
   width: 100%;
+}
+
+.pdf-page-canvas--ready {
+  opacity: 1;
+}
+
+.page-skeleton--queued {
+  min-height: 360px;
+  opacity: 0.32;
 }
 
 .action-bar--preview {
