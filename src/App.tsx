@@ -1,16 +1,16 @@
-import { ChevronDown, Coins, FileCheck2, IdCard, Languages, Loader2, UserRound } from "lucide-react";
+import { Coins, FileCheck2, IdCard, Loader2, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ApartmentPicker } from "./components/ApartmentPicker";
 import { BottomActionBar } from "./components/BottomActionBar";
 import { DateField } from "./components/DateField";
 import { Field } from "./components/Field";
+import { LanguagePicker } from "./components/LanguagePicker";
 import { PillGroup } from "./components/PillGroup";
 import { PreviewModal } from "./components/PreviewModal";
 import configJson from "./data/agreementConfig.json";
 import type {
   AgreementConfig,
   AgreementFormData,
-  AgreementLanguage,
   ApartmentNumber,
   GeneratedAgreement,
   TermPreset,
@@ -200,15 +200,7 @@ function App() {
       <main className="screen">
         <section className="panel language-panel">
           <Field label="Agreement language" hint="PDF language">
-            <div className="input-shell">
-              <Languages size={19} />
-              <select aria-label="Agreement language" value={form.language}
-                onChange={(event) => updateForm("language", event.target.value as AgreementLanguage)}>
-                <option value="en">English</option>
-                <option value="dv" lang="dv">ދިވެހި — Dhivehi</option>
-              </select>
-              <ChevronDown size={18} aria-hidden="true" />
-            </div>
+            <LanguagePicker value={form.language} onChange={(language) => updateForm("language", language)} />
           </Field>
           <p className="language-note">{form.language === "dv"
             ? "The entire agreement will be in Dhivehi, with the same party details and signatures."

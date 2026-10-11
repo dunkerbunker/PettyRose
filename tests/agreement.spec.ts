@@ -2,12 +2,18 @@ import { test, expect, type Page } from "@playwright/test";
 import { dhivehi, dhivehiTerms } from "../src/data/dhivehiAgreement";
 import config from "../src/data/agreementConfig.json" with { type: "json" };
 
+const chooseLanguage = async (page: Page, language: "en" | "dv") => {
+  await page.getByRole("button", { name: "Agreement language", exact: true }).click();
+  await page.getByRole("radio", { name: language === "en" ? "English" : "Dhivehi", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Choose language" })).toHaveCount(0);
+};
+
 const fillForm = async (page: Page, language: "en" | "dv" = "en") => {
   await page.goto("./");
   await expect(page.getByText("Loading agreement tool", { exact: true })).toHaveCount(0);
   await page.getByPlaceholder("Full legal name").fill(language === "dv" ? "އަހުމަދު އަލީ" : "Ahmed Ali");
   await page.getByPlaceholder("A000000").fill("A123456");
-  await page.getByRole("combobox", { name: "Agreement language" }).selectOption(language);
+  await chooseLanguage(page, language);
 };
 const ready = async (page: Page) => {
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -97,10 +103,10 @@ test("English preview failure keeps PDF actions available and can retry", async 
 
 test("A failed font request can be retried without losing form details", async ({ page }) => {
   await fillForm(page, "dv");
-  await page.route("**/fonts/NotoSansThaana.ttf", (route) => route.abort());
+  await page.route("**/fonts/Faruma.otf", (route) => route.abort());
   await page.getByRole("button", { name: "Generate preview" }).click();
   await expect(page.getByText("PDF could not be prepared.", { exact: false })).toBeVisible();
-  await page.unroute("**/fonts/NotoSansThaana.ttf");
+  await page.unroute("**/fonts/Faruma.otf");
   await page.getByRole("button", { name: "Generate preview" }).click();
   await ready(page);
 });
@@ -116,9 +122,9 @@ test("Dhivehi includes every clause and preserves the configured parties and ent
     };
   });
   await fillForm(page, "dv");
-  await page.getByRole("combobox", { name: "Agreement language" }).selectOption("en");
+  await chooseLanguage(page, "en");
   await expect(page.getByPlaceholder("A000000")).toHaveValue("A123456");
-  await page.getByRole("combobox", { name: "Agreement language" }).selectOption("dv");
+  await chooseLanguage(page, "dv");
   await page.getByRole("textbox", { name: "Monthly rent MVR", exact: true }).fill("12345");
   await page.getByRole("textbox", { name: "Security deposit MVR", exact: true }).fill("24690");
   await page.getByRole("button", { name: "Generate preview" }).click();

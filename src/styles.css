@@ -19,20 +19,20 @@
 }
 
 @font-face {
-  font-family: "Agreement Thaana UI";
-  src: url("/fonts/NotoSansThaana.ttf") format("truetype");
-  font-weight: 100 900;
+  font-family: "Faruma";
+  src: url("/fonts/Faruma.otf") format("opentype");
+  font-weight: 400;
   font-display: swap;
 }
 
-.language-panel select { appearance: auto; font-family: "Agreement Thaana UI", sans-serif; }
-.language-panel select option { color: #111; background: white; }
 .language-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 0; }
-input[lang="dv"] { font-family: "Agreement Thaana UI", sans-serif; }
+input[lang="dv"], [lang="dv"] { font-family: "Faruma", sans-serif; font-weight: 400; }
 
 * {
   box-sizing: border-box;
 }
+
+html { touch-action: manipulation; }
 
 html,
 body,
@@ -57,6 +57,8 @@ select {
 button {
   border: 0;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-shell {
@@ -467,14 +469,26 @@ button {
   opacity: 1;
 }
 
-.sheet-shell {
-  animation: sheet-shell-in 180ms var(--ease-out) both;
+.sheet-dialog {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  height: 100%;
+  height: 100dvh;
   inset: 0;
+  margin: 0;
+  max-height: none;
+  max-width: none;
+  overflow: hidden;
+  padding: 0;
   position: fixed;
-  z-index: 50;
+  width: 100%;
 }
 
+.sheet-dialog::backdrop { background: transparent; }
+
 .sheet-backdrop {
+  animation: sheet-shell-in 180ms var(--ease-out) both;
   background: rgba(0, 0, 0, 0.42);
   inset: 0;
   opacity: 1;
@@ -498,19 +512,34 @@ button {
   will-change: transform;
 }
 
-.apartment-sheet {
+.drawer-sheet {
+  animation-duration: 200ms;
   gap: 14px;
   grid-template-rows: auto auto minmax(0, 1fr);
   max-height: calc(100% - 20px);
+  overflow: hidden;
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
+
+.drawer-handle { align-items: center; display: flex; height: 22px; margin: -9px -14px -8px; }
+.drawer-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.date-picker-content, .language-options { display: grid; gap: 14px; }
+.language-option { align-items: center; background: white; border: 1px solid var(--line); border-radius: 20px; color: var(--ink); display: flex; gap: 14px; justify-content: space-between; min-height: 88px; padding: 16px; text-align: left; }
+.language-option > span:first-child { display: grid; gap: 5px; }
+.language-option strong { font-size: 18px; }
+.language-option strong [lang="dv"], .language-trigger [lang="dv"] { font-size: 24px; }
+.language-option small { color: var(--muted); font-size: 12px; }
+.language-option--active { background: var(--ink); border-color: var(--ink); color: white; }
+.language-option--active small { color: #d3d3ca; }
+.language-option__check { align-items: center; border: 1px solid currentColor; border-radius: 50%; display: flex; height: 28px; justify-content: center; width: 28px; }
+.sheet-dialog[data-keyboard="true"] .bottom-sheet, .sheet-dialog[data-keyboard="true"] .sheet-backdrop { animation: none; }
+.apartment-option:focus-visible, .language-option:focus-visible, .calendar-day:focus-visible, .apartment-trigger:focus-visible, .date-field:focus-visible, .icon-button:focus-visible { outline: 2px solid #4263db; outline-offset: -3px; }
+.apartment-trigger:active, .date-field:active, .pill:active, .icon-button:active, .language-option:active { transform: scale(0.98); }
+.apartment-option:active { filter: brightness(0.94); }
 
 .apartment-options {
   display: grid;
   gap: 10px;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .apartment-option {
@@ -625,19 +654,19 @@ button {
   border-radius: 15px;
   color: var(--ink);
   display: inline-flex;
-  height: 42px;
+  height: 44px;
   justify-content: center;
   transition:
     transform 150ms var(--ease-out),
     background 150ms ease;
-  width: 42px;
+  width: 44px;
 }
 
 .date-controls {
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: 42px minmax(0, 1fr) 86px 42px;
+  grid-template-columns: 44px minmax(0, 1fr) 86px 44px;
 }
 
 .date-controls select,
@@ -646,7 +675,8 @@ button {
   border: 1px solid var(--line);
   border-radius: 14px;
   color: var(--ink);
-  height: 42px;
+  height: 44px;
+  font-size: 16px;
   outline: 0;
   padding: 0 10px;
   width: 100%;
@@ -667,6 +697,7 @@ button {
 
 .calendar-day {
   aspect-ratio: 1;
+  min-height: 44px;
   background: white;
   border: 1px solid var(--line);
   border-radius: 999px;

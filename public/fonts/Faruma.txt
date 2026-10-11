@@ -1,0 +1,12 @@
+Faruma — Version 2.0 Official release
+
+Created by Ibrahim Yasir. Calligraphy by Musthafa Mohamed.
+Assisted by Ahmed Asif. The President's Office, 2002. All rights reserved.
+
+This unmodified font was copied from the locally installed Faruma.otf.
+Font metadata identifies the family as Faruma, Regular, version 2.0 Official release.
+The font catalog lists Faruma as free for personal and commercial use:
+https://thaanafontgallery.com/font/faruma/
+
+Faruma is used for Dhivehi interface text and rasterized agreement pages.
+The unrelated SIL Open Font License for Noto Sans Thaana does not apply to Faruma.

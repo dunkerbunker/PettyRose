@@ -8,13 +8,13 @@ const HEIGHT = 841.89;
 const MARGIN = 48;
 const CONTENT = WIDTH - MARGIN * 2;
 const SCALE = 2.5; // 180 dpi; bounded to one working canvas, including on mobile.
-const FONT = '"Agreement Thaana", sans-serif';
+const FONT = '"Faruma", sans-serif';
 let fontPromise: Promise<void> | undefined;
 
 const loadFont = () => {
   if (!fontPromise) {
     fontPromise = (async () => {
-      const font = new FontFace("Agreement Thaana", `url(${import.meta.env.BASE_URL}fonts/NotoSansThaana.ttf)`, { weight: "100 900" });
+      const font = new FontFace("Faruma", `url(${import.meta.env.BASE_URL}fonts/Faruma.otf)`, { weight: "400" });
       const loaded = await font.load();
       document.fonts.add(loaded);
     })().catch((error: unknown) => {
