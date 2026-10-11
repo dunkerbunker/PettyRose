@@ -46,6 +46,8 @@ tmp/pdfs/
 
 ### Generated artifacts
 coverage/
+test-results/
+playwright-report/
 .nyc_output/
 *.tgz
 

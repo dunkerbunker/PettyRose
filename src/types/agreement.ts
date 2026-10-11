@@ -1,5 +1,6 @@
-export type ApartmentNumber = "2A" | "2B" | "3A" | "3B";
+export type ApartmentNumber = `${2 | 3 | 4 | 5 | 6}${"A" | "B"}`;
 export type TermPreset = "6m" | "1y" | "2y" | "custom";
+export type AgreementLanguage = "en" | "dv";
 
 export type PartyDetails = {
   name: string;
@@ -20,6 +21,7 @@ export type AgreementConfig = {
   };
   landlord: PartyDetails & {
     paymentAccount: string;
+    paymentAccountDhivehi: string;
     signaturePath: string;
   };
   witnesses: {
@@ -43,6 +45,7 @@ export type AgreementConfig = {
 };
 
 export type AgreementFormData = {
+  language: AgreementLanguage;
   tenantName: string;
   tenantIdCardNo: string;
   apartmentNumber: ApartmentNumber;
@@ -58,4 +61,7 @@ export type GeneratedAgreement = {
   blob: Blob;
   url: string;
   filename: string;
+  language: AgreementLanguage;
+  /** Native-shaped page images also provide a preview when PDF.js is unavailable. */
+  previewPages?: string[];
 };

@@ -1,4 +1,4 @@
-import { Coins, FileCheck2, IdCard, Loader2, UserRound } from "lucide-react";
+import { ChevronDown, Coins, FileCheck2, IdCard, Languages, Loader2, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ApartmentPicker } from "./components/ApartmentPicker";
 import { BottomActionBar } from "./components/BottomActionBar";
@@ -10,6 +10,7 @@ import configJson from "./data/agreementConfig.json";
 import type {
   AgreementConfig,
   AgreementFormData,
+  AgreementLanguage,
   ApartmentNumber,
   GeneratedAgreement,
   TermPreset,
@@ -26,6 +27,7 @@ const createInitialForm = (): AgreementFormData => {
   const startDate = todayInputValue();
   const apartment = getApartment(config, "2B");
   return {
+    language: "en",
     tenantName: "",
     tenantIdCardNo: "",
     apartmentNumber: "2B",
@@ -75,7 +77,6 @@ function App() {
   const [agreement, setAgreement] = useState<GeneratedAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState("");
-  const [previewZoom, setPreviewZoom] = useState(1);
 
   const selectedApartment = useMemo(
     () => getApartment(config, form.apartmentNumber),
@@ -84,7 +85,11 @@ function App() {
   const canNativeShare = useMemo(() => {
     if (!agreement) return false;
     const file = new File([agreement.blob], agreement.filename, { type: "application/pdf" });
-    return Boolean(navigator.canShare?.({ files: [file] }));
+    try {
+      return typeof navigator.share === "function" && Boolean(navigator.canShare?.({ files: [file] }));
+    } catch {
+      return false;
+    }
   }, [agreement]);
 
   useEffect(() => {
@@ -149,12 +154,10 @@ function App() {
     setIsGenerating(true);
     setGenerationError("");
     try {
-      if (agreement?.url) URL.revokeObjectURL(agreement.url);
       const generated = await generateAgreementPdf(form);
       setAgreement(generated);
-      setPreviewZoom(1);
     } catch {
-      setGenerationError("PDF could not be prepared. Check the tenant details and try again.");
+      setGenerationError("PDF could not be prepared. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -165,13 +168,15 @@ function App() {
     const anchor = document.createElement("a");
     anchor.href = agreement.url;
     anchor.download = agreement.filename;
+    document.body.append(anchor);
     anchor.click();
+    anchor.remove();
   };
 
   const handleShare = async () => {
     if (!agreement) return;
     const file = new File([agreement.blob], agreement.filename, { type: "application/pdf" });
-    if (navigator.canShare?.({ files: [file] })) {
+    if (canNativeShare && navigator.share) {
       await navigator.share({
         title: "Residential Tenancy Agreement",
         text: `${form.apartmentNumber} tenancy agreement for ${form.tenantName}`,
@@ -193,6 +198,22 @@ function App() {
       </header>
 
       <main className="screen">
+        <section className="panel language-panel">
+          <Field label="Agreement language" hint="PDF language">
+            <div className="input-shell">
+              <Languages size={19} />
+              <select aria-label="Agreement language" value={form.language}
+                onChange={(event) => updateForm("language", event.target.value as AgreementLanguage)}>
+                <option value="en">English</option>
+                <option value="dv" lang="dv">ދިވެހި — Dhivehi</option>
+              </select>
+              <ChevronDown size={18} aria-hidden="true" />
+            </div>
+          </Field>
+          <p className="language-note">{form.language === "dv"
+            ? "The entire agreement will be in Dhivehi, with the same party details and signatures."
+            : "The entire agreement will be in English."}</p>
+        </section>
         <section className="status-strip">
           <div>
             <span>Apartment</span>
@@ -218,6 +239,8 @@ function App() {
               <UserRound size={19} />
               <input
                 autoComplete="name"
+                dir="auto"
+                lang={form.language}
                 placeholder="Full legal name"
                 value={form.tenantName}
                 onChange={(event) => updateForm("tenantName", event.target.value)}
@@ -350,8 +373,6 @@ function App() {
         <PreviewModal
           agreement={agreement}
           fallback={!canNativeShare}
-          zoom={previewZoom}
-          onZoom={setPreviewZoom}
           onShare={handleShare}
           onClose={() => setAgreement(null)}
         />

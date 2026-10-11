@@ -3,6 +3,7 @@ import configJson from "../data/agreementConfig.json";
 import type { AgreementConfig, AgreementFormData, GeneratedAgreement } from "../types/agreement";
 import { formatDisplayDate } from "./date";
 import { apartmentLabel, buildFilename, formatMoney, getApartment } from "./format";
+import { generateDhivehiPdf } from "./pdfDhivehi";
 
 const config = configJson as AgreementConfig;
 
@@ -161,9 +162,11 @@ const resolveAssetPath = (path: string): string => {
 
 const loadImage = async (path: string): Promise<string> => {
   const response = await fetch(resolveAssetPath(path));
+  if (!response.ok) throw new Error(`Could not load signature: ${path}`);
   const blob = await response.blob();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read signature."));
     reader.onloadend = () => resolve(String(reader.result));
     reader.readAsDataURL(blob);
   });
@@ -386,6 +389,7 @@ const drawSignatures = (
 };
 
 export const generateAgreementPdf = async (data: AgreementFormData): Promise<GeneratedAgreement> => {
+  if (data.language === "dv") return generateDhivehiPdf(data, config);
   const apartment = getApartment(config, data.apartmentNumber);
   const premises = apartmentLabel(apartment);
   const [landlordSignature, witnessSignature] = await Promise.all([
@@ -422,5 +426,6 @@ export const generateAgreementPdf = async (data: AgreementFormData): Promise<Gen
     blob,
     url: URL.createObjectURL(blob),
     filename: buildFilename(data.apartmentNumber, data.tenantName),
+    language: "en",
   };
 };

@@ -7,6 +7,7 @@
     "name": "Shadhiya Thaufeeg",
     "idCardNo": "A081464",
     "paymentAccount": "Bank of Maldives account no. 7770000013844, account holder Shadhiya Thaufeeg",
+    "paymentAccountDhivehi": "ބޭންކް އޮފް މޯލްޑިވްސް؛ އެކައުންޓު ނަންބަރު: 7770000013844؛ އެކައުންޓުގެ ވެރިފަރާތް: Shadhiya Thaufeeg",
     "signaturePath": "/signatures/shadhiya.png"
   },
   "witnesses": {
@@ -23,7 +24,13 @@
     { "apartmentNumber": "2A", "floor": 2, "unit": "A", "monthlyRent": 10000 },
     { "apartmentNumber": "2B", "floor": 2, "unit": "B", "monthlyRent": 16000 },
     { "apartmentNumber": "3A", "floor": 3, "unit": "A", "monthlyRent": 10000 },
-    { "apartmentNumber": "3B", "floor": 3, "unit": "B", "monthlyRent": 16000 }
+    { "apartmentNumber": "3B", "floor": 3, "unit": "B", "monthlyRent": 16000 },
+    { "apartmentNumber": "4A", "floor": 4, "unit": "A", "monthlyRent": 10000 },
+    { "apartmentNumber": "4B", "floor": 4, "unit": "B", "monthlyRent": 16000 },
+    { "apartmentNumber": "5A", "floor": 5, "unit": "A", "monthlyRent": 10000 },
+    { "apartmentNumber": "5B", "floor": 5, "unit": "B", "monthlyRent": 16000 },
+    { "apartmentNumber": "6A", "floor": 6, "unit": "A", "monthlyRent": 10000 },
+    { "apartmentNumber": "6B", "floor": 6, "unit": "B", "monthlyRent": 16000 }
   ],
   "fixedFees": {
     "latePaymentDailyFee": 300

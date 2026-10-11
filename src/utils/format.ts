@@ -1,4 +1,4 @@
-import type { AgreementConfig, ApartmentConfig, ApartmentNumber } from "../types/agreement";
+import type { AgreementConfig, AgreementLanguage, ApartmentConfig, ApartmentNumber } from "../types/agreement";
 
 export const formatMoney = (amount: number): string =>
   new Intl.NumberFormat("en-US", {
@@ -8,15 +8,15 @@ export const formatMoney = (amount: number): string =>
 export const sanitizeFilenamePart = (value: string): string => {
   const cleaned = value
     .trim()
-    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "-")
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
 
   return cleaned || "tenant";
 };
 
-export const buildFilename = (apartmentNumber: ApartmentNumber, tenantName: string): string =>
-  `${apartmentNumber}-${sanitizeFilenamePart(tenantName)}-agreement.pdf`;
+export const buildFilename = (apartmentNumber: ApartmentNumber, tenantName: string, language: AgreementLanguage = "en"): string =>
+  `${apartmentNumber}-${sanitizeFilenamePart(tenantName)}-agreement${language === "dv" ? "-dhivehi" : ""}.pdf`;
 
 export const ordinalFloor = (floor: number): string => {
   const suffix = floor === 1 ? "st" : floor === 2 ? "nd" : floor === 3 ? "rd" : "th";
